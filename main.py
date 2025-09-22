@@ -2,6 +2,8 @@ import os
 import random
 import torch
 from torch import nn
+from torch.utils.data import DataLoader
+from torchvision import datasets, transforms
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -28,6 +30,7 @@ walk_through_dir(DATA_PATH)
 
 # Manual seed
 torch.manual_seed(27)
+random.seed(27)
 
 # 1. Get all image paths
 data_path_list = list(DATA_PATH.glob("*/*/*.jpg"))
@@ -46,3 +49,22 @@ print(f"Random image path {random_image_path}")
 print(f"Image class: {image_class}")
 print(f"Image height: {img.height}")
 print(f"Image width: {img.width}")
+
+# Image as array
+img_as_array = np.asarray(img)
+
+# Plot the image
+plt.figure(figsize=(10, 7))
+plt.imshow(img_as_array)
+plt.title(f"Image class: {image_class} | Image shape: {img_as_array.shape} -> [height, width, colour_channels]")
+plt.axis(False)
+plt.show()
+
+# Transforming data
+data_transform = transforms.Compose([
+    transforms.Resize(size=(64, 64)),
+    transforms.RandomHorizontalFlip(p=0.5),
+    transforms.ToTensor()
+])
+
+print(data_transform(img).shape)
