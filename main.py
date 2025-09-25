@@ -21,50 +21,32 @@ TEST_PATH = DATA_PATH / "test"
 
 classes = ("cat", "dog", "snake")
 
-def walk_through_dir(dir_path):
-    """Walks through dir_path returning its contents"""
-    for dirpath, dirnames, filenames in os.walk(dir_path):
-        print(f"There are {len(dirnames)} directories and {len(filenames)} images in '{dirpath}'.")
+train_transform = transforms.Compose([
+    transforms.Resize(size=(64, 64)), 
+    transforms.RandomHorizontalFlip(p=0.5), 
+    transforms.ToTensor()])
 
-walk_through_dir(DATA_PATH)
+test_transform = transforms.Compose([
+    transforms.Resize(size=(64, 64)), 
+    transforms.ToTensor()])
 
-# Manual seed
-torch.manual_seed(27)
-random.seed(27)
+train_data = datasets.ImageFolder(root=TRAIN_PATH,
+                         transform=train_transform,
+                         target_transform=None)
 
-# 1. Get all image paths
-data_path_list = list(DATA_PATH.glob("*/*/*.jpg"))
+test_data = datasets.ImageFolder(root=TEST_PATH,
+                         transform=test_transform,
+                         target_transform=None)
 
-# 2. Choose random image
-random_image_path = random.choice(data_path_list)
+BATCH_SIZE = 32
 
-# 3. Image class
-image_class = random_image_path.parent.stem
+train_dataloader = DataLoader(dataset=train_data, 
+                              batch_size=BATCH_SIZE,
+                              shuffle=True)
 
-# 4. Open image
-img = Image.open(random_image_path)
+test_dataloader = DataLoader(dataset=test_data, 
+                              batch_size=BATCH_SIZE,
+                              shuffle=True)
 
-# 5. Print metadata
-print(f"Random image path {random_image_path}")
-print(f"Image class: {image_class}")
-print(f"Image height: {img.height}")
-print(f"Image width: {img.width}")
-
-# Image as array
-img_as_array = np.asarray(img)
-
-# Plot the image
-plt.figure(figsize=(10, 7))
-plt.imshow(img_as_array)
-plt.title(f"Image class: {image_class} | Image shape: {img_as_array.shape} -> [height, width, colour_channels]")
-plt.axis(False)
-plt.show()
-
-# Transforming data
-data_transform = transforms.Compose([
-    transforms.Resize(size=(64, 64)),
-    transforms.RandomHorizontalFlip(p=0.5),
-    transforms.ToTensor()
-])
-
-print(data_transform(img).shape)
+print(train_data[0][0].shape)
+print(train_data[0][1])
