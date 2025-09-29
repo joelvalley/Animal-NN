@@ -39,17 +39,14 @@ test_data = datasets.ImageFolder(root=TEST_PATH,
                          target_transform=None)
 
 BATCH_SIZE = 32
-NUM_WORKERS = os.cpu_count()
 
 train_dataloader = DataLoader(dataset=train_data, 
                               batch_size=BATCH_SIZE,
-                              shuffle=True,
-                              num_workers=NUM_WORKERS)
+                              shuffle=True)
 
 test_dataloader = DataLoader(dataset=test_data, 
                               batch_size=BATCH_SIZE,
-                              shuffle=True,
-                              num_workers=NUM_WORKERS)
+                              shuffle=True)
 
 class AnimalNN(nn.Module):
     def __init__(self, 
@@ -92,27 +89,14 @@ class AnimalNN(nn.Module):
 
         self.classifier = nn.Sequential(
             nn.Flatten(),
-            nn.Linear(in_features=hidden_units,
+            nn.Linear(in_features=hidden_units*16*16,
                       out_features=output_shape)
         )
 
     def forward(self, x: int):
-        x = self.conv_block_1(x)
-        print(x.shape)
-        x = self.conv_block_2(x)
-        print(x.shape)
-        print(torch.flatten(x).shape)
-        x = self.classifier(x)
-        print(x.shape)
-
-        return x
-        # return self.classifier(self.conv_block_2(self.conv_block_1(x)))
-
-print(train_data[0][0])
+        return self.classifier(self.conv_block_2(self.conv_block_1(x)))
 
 image_batch, label_batch = next(iter(train_dataloader))
-print(image_batch.shape)
-print(label_batch.shape)
 
 model = AnimalNN(input_shape=3,
                  hidden_units=10,
