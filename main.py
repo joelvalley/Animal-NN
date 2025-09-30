@@ -4,6 +4,7 @@ import torch
 from torch import nn
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
+from torchinfo import summary
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -23,7 +24,7 @@ classes = ("cat", "dog", "snake")
 
 train_transform = transforms.Compose([
     transforms.Resize(size=(64, 64)), 
-    transforms.RandomHorizontalFlip(p=0.5), 
+    transforms.TrivialAugmentWide(num_magnitude_bins=31), 
     transforms.ToTensor()])
 
 test_transform = transforms.Compose([
@@ -96,6 +97,67 @@ class AnimalNN(nn.Module):
     def forward(self, x: int):
         return self.classifier(self.conv_block_2(self.conv_block_1(x)))
 
+def train_step(model: torch.nn.Module,
+               dataloader: torch.utils.data.DataLoader,
+               loss_fn: torch.nn.Module,
+               optimizer: torch.optim.Optimizer):
+    # Put model in train mode
+    model.train()
+
+    train_loss, train_acc = 0, 0
+
+    for batch, (x, y) in enumerate(dataloader):
+        x, y = x.to(device), y.to(device)
+
+        #1. Forward pass
+        y_logit = model(x)
+        y_pred = torch.argmax(torch.softmax(y_logit, dim=1), dim=1)
+
+        # 2. Calculate loss
+        loss = loss_fn(y_logit, y)
+        train_loss += loss.item()
+
+        # 3. Optimizer zero grad
+        optimizer.zero_grad()
+
+        # 4. Loss backward
+        loss.backward()
+
+        # 5. Optimizer step
+        optimizer.step()
+
+        train_acc += (y_pred==y).sum().item()/len(y_pred)
+
+    train_loss = train_loss/len(dataloader)
+    train_acc = train_acc/len(dataloader)
+    
+    return train_loss, train_acc
+
+
+def test_step(model: torch.nn.Module,
+               dataloader: torch.utils.data.DataLoader,
+               loss_fn: torch.nn.Module):
+    # Put model in evaluation mode
+    model.eval()
+
+    test_loss, test_acc = 0
+
+    with torch.inference_mode():
+        for batch, (x, y) in enumerate(dataloader):
+            x, y = x.to(device), y.to(device)
+            # 1. Forward pass
+            y_logit = model(x)
+            y_pred = torch.argmax(torch.softmax(y_logit, dim=1), dim=1)
+
+            # 2. Calculate loss
+            loss = loss_fn(y_logit, y)
+            test_loss += loss.item()
+            test_acc += (y_pred==y).sum().item()/len(y_pred)
+
+    test_loss = test_loss/len(dataloader)
+    test_acc = test_acc/len(dataloader)
+    return test_loss, test_acc
+
 image_batch, label_batch = next(iter(train_dataloader))
 
 model = AnimalNN(input_shape=3,
@@ -103,3 +165,4 @@ model = AnimalNN(input_shape=3,
                  output_shape=3).to(device)
 
 model(image_batch.to(device))
+summary(model=model, input_data=(BATCH_SIZE, 3, 32, 32))
